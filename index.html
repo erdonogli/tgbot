@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Crypto Mini App</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; background:#0b1220; color:#e6eef8; padding:20px; }
+    .card { background:#0f1724; padding:16px; border-radius:10px; margin:10px 0; }
+    button { background:#06b6d4; border:none; padding:10px 14px; border-radius:8px; cursor:pointer; }
+  </style>
+</head>
+<body>
+  <h2>🚀 Crypto Mini App (Demo)</h2>
+  <div class="card">
+    <div>Bitcoin (BTC): <strong id="btc">loading...</strong></div>
+    <div style="margin-top:8px;">
+      <button onclick="refreshPrice()">🔄 Yangilash</button>
+      <button onclick="closeApp()">❌ Yopish</button>
+    </div>
+  </div>
+
+<script>
+  const tg = window.Telegram?.WebApp;
+  if (tg) {
+    tg.expand(); // mini-appni kengaytirish
+  }
+
+  async function refreshPrice(){
+    try {
+      const r = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd");
+      const j = await r.json();
+      document.getElementById('btc').innerText = j.bitcoin.usd + " USD";
+    } catch(e) {
+      document.getElementById('btc').innerText = "Xato yuklash";
+    }
+  }
+
+  function closeApp() {
+    if (tg) tg.close(); // Telegram ichidagi mini-appni yopadi
+  }
+
+  refreshPrice();
+</script>
+</body>
+</html>
