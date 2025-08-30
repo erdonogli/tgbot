@@ -1,106 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Crypto Price Tracker</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Crypto Tracker</title>
+  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #0d1117;
+      background: #0f111a;
       color: white;
       text-align: center;
-      margin: 0;
-      padding: 20px;
     }
-    .card {
-      background: #161b22;
-      padding: 20px;
+    #chart {
+      width: 100%;
+      height: 500px;
       margin: 20px auto;
-      border-radius: 15px;
-      width: 80%;
-      box-shadow: 0 0 15px rgba(0,0,0,0.5);
     }
-    h1 { color: #f0b90b; }
-    canvas { background: #fff; border-radius: 10px; }
+    .crypto-info {
+      margin-top: 20px;
+      font-size: 18px;
+    }
   </style>
 </head>
 <body>
-  <h1>📊 Live Crypto Price Tracker</h1>
-  <div class="card">
-    <h2 id="btc-price">Bitcoin: $0</h2>
-    <canvas id="btcChart" width="400" height="200"></canvas>
-  </div>
-  <div class="card">
-    <h2 id="eth-price">Ethereum: $0</h2>
-    <canvas id="ethChart" width="400" height="200"></canvas>
+  <h1>📈 Crypto Tracker</h1>
+  <div id="chart"></div>
+  <div class="crypto-info">
+    <span id="price"></span>
   </div>
 
   <script>
-    // Grafik uchun data
-    let btcData = [];
-    let ethData = [];
-    let labels = [];
-
-    const btcCtx = document.getElementById('btcChart').getContext('2d');
-    const ethCtx = document.getElementById('ethChart').getContext('2d');
-
-    const btcChart = new Chart(btcCtx, {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'Bitcoin Price (USD)',
-          data: btcData,
-          borderColor: '#f7931a',
-          borderWidth: 2,
-          fill: false
-        }]
-      }
+    // Chart yaratish
+    const chart = LightweightCharts.createChart(document.getElementById('chart'), {
+      width: window.innerWidth * 0.9,
+      height: 500,
+      layout: {
+        background: { color: '#0f111a' },
+        textColor: 'white',
+      },
+      grid: {
+        vertLines: { color: '#1e222d' },
+        horzLines: { color: '#1e222d' },
+      },
+      crosshair: {
+        mode: LightweightCharts.CrosshairMode.Normal,
+      },
+      timeScale: {
+        borderColor: '#485c7b',
+      },
     });
 
-    const ethChart = new Chart(ethCtx, {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'Ethereum Price (USD)',
-          data: ethData,
-          borderColor: '#3c3cfc',
-          borderWidth: 2,
-          fill: false
-        }]
-      }
+    const lineSeries = chart.addLineSeries({
+      color: '#4cafef',
+      lineWidth: 2,
     });
 
-    async function getPrices() {
-      const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd");
+    // CoinGecko API dan real-time ma’lumot olish
+    async function fetchData() {
+      const res = await fetch("https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1");
       const data = await res.json();
 
-      // Olingan narxlarni chiqarish
-      document.getElementById("btc-price").innerText = `Bitcoin: $${data.bitcoin.usd}`;
-      document.getElementById("eth-price").innerText = `Ethereum: $${data.ethereum.usd}`;
+      const prices = data.prices.map(p => {
+        return { time: Math.floor(p[0] / 1000), value: p[1] }; // timestamp sekundlarda
+      });
 
-      // Grafik uchun data qo‘shish
-      const now = new Date().toLocaleTimeString();
-      labels.push(now);
-      btcData.push(data.bitcoin.usd);
-      ethData.push(data.ethereum.usd);
+      lineSeries.setData(prices);
 
-      // Faqat oxirgi 10 ta nuqtani ko‘rsatish
-      if (labels.length > 10) {
-        labels.shift();
-        btcData.shift();
-        ethData.shift();
-      }
-
-      btcChart.update();
-      ethChart.update();
+      // oxirgi narxni chiqarish
+      const lastPrice = prices[prices.length - 1].value.toFixed(2);
+      document.getElementById("price").innerText = `Bitcoin Price: $${lastPrice}`;
     }
 
-    getPrices();
-    setInterval(getPrices, 10000); // har 10 sekundda yangilanadi
+    fetchData();
+
+    // har 1 daqiqada yangilab turadi
+    setInterval(fetchData, 60000);
   </script>
 </body>
 </html>
